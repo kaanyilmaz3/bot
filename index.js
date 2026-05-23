@@ -9,8 +9,14 @@ const client = new Client({
   ]
 });
 
+// SADECE 1 KEZ BAĞLANSIN DİYE GUARD
+let ready = false;
+
 client.once('ready', () => {
-  console.log(`${client.user.tag} aktif!`);
+  if (ready) return;
+  ready = true;
+
+  console.log(`${client.user.tag} aktif! (PID: ${process.pid})`);
 });
 
 client.on('messageCreate', async (message) => {
