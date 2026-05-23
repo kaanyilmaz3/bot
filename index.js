@@ -44,7 +44,7 @@ client.on('messageCreate', async (message) => {
 
     const data = await response.json();
 
-    if (!data.choices || !data.choices[0]) {
+    if (!data.choices?.[0]) {
       console.log(data);
       return message.reply('AI error.');
     }
