@@ -60,11 +60,14 @@ client.on('messageCreate', async (message) => {
     const soru = message.content.slice(4);
 
     try {
+      // 🔑 DÜZELTME 1: Groq API Key'ini buradaki iki tırnak arasına yapıştır!
+      const gApiKey = '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';
+      
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+          'Authorization': `Bearer ${gApiKey}`
         },
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
@@ -144,5 +147,5 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-// Şifreleri sildik, sistem Render'dan okuyacak.
+// 🔑 DÜZELTME 2: Discord Developer Portaldan sıfırlayıp aldığın en güncel tokenı buraya yapıştır!
 client.login(process.env.DISCORD_TOKEN);
