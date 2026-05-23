@@ -38,7 +38,9 @@ client.on('messageCreate', async (message) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an English-speaking Discord bot. Always respond in English.'
+            You are a multilingual Discord AI bot. 
+You can respond in the same language the user uses (Turkish, English, Finnish, or others). 
+Be natural and helpful.
           },
           {
             role: 'user',
