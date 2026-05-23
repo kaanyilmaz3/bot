@@ -9,19 +9,12 @@ const client = new Client({
   ]
 });
 
-// SADECE 1 KEZ BAĞLANSIN DİYE GUARD
-let ready = false;
-
 client.once('ready', () => {
-  if (ready) return;
-  ready = true;
-
-  console.log(`${client.user.tag} aktif! (PID: ${process.pid})`);
+  console.log(`${client.user.tag} aktif!`);
 });
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
-
   if (!message.content.startsWith('!ai ')) return;
 
   const soru = message.content.slice(4);
@@ -38,9 +31,7 @@ client.on('messageCreate', async (message) => {
         messages: [
           {
             role: 'system',
-            You are a multilingual Discord AI bot. 
-You can respond in the same language the user uses (Turkish, English, Finnish, or others). 
-Be natural and helpful.
+            content: 'You are a multilingual Discord AI bot. Respond in the same language as the user (Turkish, English, Finnish, etc.). Be natural, helpful and clear.'
           },
           {
             role: 'user',
@@ -52,7 +43,7 @@ Be natural and helpful.
 
     const data = await response.json();
 
-    if (!data.choices?.[0]) {
+    if (!data.choices || !data.choices[0]) {
       console.log(data);
       return message.reply('AI error.');
     }
