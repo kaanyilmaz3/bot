@@ -19,14 +19,12 @@ client.on('messageCreate', async (message) => {
 
   // LOAN MENÜSÜNÜ KURMA KOMUTU (!loan-kur)
   if (message.content === '!loan-kur') {
-    // Sadece yöneticilerin kurabilmesi için küçük bir güvenlik (İsteğe bağlı)
     if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
         return message.reply('Bu komutu kullanmak için Yönetici yetkiniz olmalı.');
     }
 
-    // Görseldeki şık Mor temalı Embed mesajı hazırlıyoruz
     const loanEmbed = new EmbedBuilder()
-        .setColor('#8a2be2') // Mor renk tonu
+        .setColor('#8a2be2')
         .setTitle('💸 Loan Service')
         .setDescription(
             'Welcome to the official loan service. Please read the options below carefully before proceeding.\n\n' +
@@ -34,16 +32,15 @@ client.on('messageCreate', async (message) => {
             '**📖 Loan Rules**\nView the full loan terms, interest rates, and repayment limits before applying.\nBy taking a loan you agree to all terms and conditions of our loan service.'
         );
 
-    // Alt kısımdaki butonlar
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId('take_loan_btn')
             .setLabel('Take a Loan')
-            .setStyle(ButtonStyle.Primary), // Mavi/Mor buton
+            .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
             .setCustomId('loan_rules_btn')
             .setLabel('Loan Rules')
-            .setStyle(ButtonStyle.Secondary), // Gri buton
+            .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
             .setCustomId('loan_guide_btn')
             .setLabel('Guide')
@@ -54,21 +51,23 @@ client.on('messageCreate', async (message) => {
             .setStyle(ButtonStyle.Secondary)
     );
 
-    // Menüyü kanala gönderiyoruz ve komut mesajını siliyoruz
     await message.channel.send({ embeds: [loanEmbed], components: [row] });
     return message.delete().catch(() => {});
   }
 
-  // SENİN MEVCUT YAPAY ZEKA KOMUTUN (!ai)
+  // YAPAY ZEKA KOMUTUN (!ai)
   if (message.content.startsWith('!ai ')) {
     const soru = message.content.slice(4);
 
     try {
+      // Buradaki process.env.GROQ_API_KEY kısmını Render panelinden vermediysen doğrudan şifreni buraya yazabilirsin.
+      const gApiKey = process.env.GROQ_API_KEY || 'BURAYA_GROQ_API_ANAHTARINI_YAZABILIRSIN';
+      
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+          'Authorization': `Bearer ${gApiKey}`
         },
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
@@ -103,41 +102,30 @@ client.on('messageCreate', async (message) => {
 
 // --- 2. KISIM: BUTON ETKİLEŞİMLERİ (INTERACTION CREATE) ---
 client.on('interactionCreate', async (interaction) => {
-    // Eğer tıklanan şey bir buton değilse işlemi durdur
     if (!interaction.isButton()) return;
 
     const guild = interaction.guild;
     const user = interaction.user;
 
-    // "Take a Loan" butonuna basıldığında
     if (interaction.customId === 'take_loan_btn') {
         try {
-            // Sadece başvuran kişinin ve yetkililerin göreceği gizli kanal oluşturma
             const ticketChannel = await guild.channels.create({
                 name: `loan-${user.username}`,
-                type: ChannelType.GuildText, // Yazı kanalı
+                type: ChannelType.GuildText,
                 permissionOverwrites: [
                     {
                         id: guild.id,
-                        deny: [PermissionFlagsBits.ViewChannel], // Herkese kapat
+                        deny: [PermissionFlagsBits.ViewChannel],
                     },
                     {
                         id: user.id,
-                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory], // Başvuran kişiye aç
+                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
                     }
-                    /* Eğer yetkili bir rolün de kanalı görmesini istiyorsan burayı aktifleştir:
-                    ,{
-                        id: 'YETKILI_ROL_ID_BURAYA', 
-                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
-                    }
-                    */
                 ],
             });
 
-            // Butona basan kişiye sadece kendisinin göreceği (ephemeral) bir onay mesajı yolla
             await interaction.reply({ content: `Kredi başvurunuz için özel kanal oluşturuldu: ${ticketChannel}`, ephemeral: true });
 
-            // Yeni açılan kanalın içine hoş geldin mesajı at
             await ticketChannel.send({
                 content: `👋 Merhaba ${user}, Kredi başvuru talebiniz başarıyla alındı.\nBuradan yetkililerle görüşebilir veya botun diğer komutlarını kullanabilirsiniz.`
             });
@@ -148,7 +136,6 @@ client.on('interactionCreate', async (interaction) => {
         }
     }
 
-    // Diğer butonlara basıldığında (Şimdilik sadece bilgi verir)
     if (interaction.customId === 'loan_rules_btn') {
         await interaction.reply({ content: '📖 **Loan Rules:** Kredi kuralları henüz eklenmedi.', ephemeral: true });
     }
@@ -160,5 +147,5 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-// Botu başlatma (Mevcut token yapınla çalışır)
-client.login(process.env.DISCORD_TOKEN || 'EĞER_ENV_YOKSA_BURAYA_TOKEN_YAZABİLİRSİN');
+// ⚠️ ADIM 1: Developer portaldan kopyaladığın upuzun bot şifreni aşağıdaki tek tırnakların içine yapıştır!
+client.login('BURAYA_DISCORD_DEVELOPER_PORTALDAN_ALMA_TOKENI_YAZ');
