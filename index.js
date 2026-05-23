@@ -1,4 +1,5 @@
 const { Client, GatewayIntentBits } = require('discord.js');
+const fetch = require('node-fetch');
 
 const client = new Client({
   intents: [
@@ -42,6 +43,11 @@ client.on('messageCreate', async (message) => {
     });
 
     const data = await response.json();
+
+    if (!data.choices) {
+      console.log(data);
+      return message.reply('Groq API error.');
+    }
 
     message.reply(data.choices[0].message.content);
 
