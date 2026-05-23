@@ -46,7 +46,8 @@ client.on('messageCreate', async (message) => {
 
     if (!data.choices) {
       console.log(data);
-      return message.reply(JSON.stringify(data));
+
+     return message.reply('AI error.');
     }
 
     message.reply(data.choices[0].message.content);
