@@ -10,7 +10,7 @@ const client = new Client({
 });
 
 client.once('ready', () => {
-  console.log('Bot aktif!');
+  console.log(`${client.user.tag} aktif!`);
 });
 
 client.on('messageCreate', async (message) => {
@@ -32,7 +32,7 @@ client.on('messageCreate', async (message) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an English-speaking Discord bot. Always reply in English.'
+            content: 'You are an English-speaking Discord bot. Always respond in English.'
           },
           {
             role: 'user',
@@ -44,13 +44,12 @@ client.on('messageCreate', async (message) => {
 
     const data = await response.json();
 
-    if (!data.choices) {
+    if (!data.choices || !data.choices[0]) {
       console.log(data);
-
-     return message.reply('AI error.');
+      return message.reply('AI error.');
     }
 
-    message.reply(data.choices[0].message.content);
+    await message.reply(data.choices[0].message.content);
 
   } catch (err) {
     console.log(err);
