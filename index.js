@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionFlagsBits } = require('discord.js');
 const fetch = require('node-fetch');
 
 const client = new Client({
@@ -13,47 +13,152 @@ client.once('ready', () => {
   console.log(`${client.user.tag} aktif!`);
 });
 
+// --- 1. KISIM: KOMUTLAR (MESSAGE CREATE) ---
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
-  if (!message.content.startsWith('!ai ')) return;
 
-  const soru = message.content.slice(4);
-
-  try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a multilingual Discord AI bot. Respond in the same language as the user (Turkish, English, Finnish, etc.). Be natural, helpful and clear.'
-          },
-          {
-            role: 'user',
-            content: soru
-          }
-        ]
-      })
-    });
-
-    const data = await response.json();
-
-    if (!data.choices || !data.choices[0]) {
-      console.log(data);
-      return message.reply('AI error.');
+  // LOAN MENÜSÜNÜ KURMA KOMUTU (!loan-kur)
+  if (message.content === '!loan-kur') {
+    // Sadece yöneticilerin kurabilmesi için küçük bir güvenlik (İsteğe bağlı)
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+        return message.reply('Bu komutu kullanmak için Yönetici yetkiniz olmalı.');
     }
 
-    await message.reply(data.choices[0].message.content);
+    // Görseldeki şık Mor temalı Embed mesajı hazırlıyoruz
+    const loanEmbed = new EmbedBuilder()
+        .setColor('#8a2be2') // Mor renk tonu
+        .setTitle('💸 Loan Service')
+        .setDescription(
+            'Welcome to the official loan service. Please read the options below carefully before proceeding.\n\n' +
+            '**📝 Take a Loan**\nApply for a loan on **Gamblit** — select your tier and submit your desired loan amount. A private ticket opens after you submit.\n\n' +
+            '**📖 Loan Rules**\nView the full loan terms, interest rates, and repayment limits before applying.\nBy taking a loan you agree to all terms and conditions of our loan service.'
+        );
 
-  } catch (err) {
-    console.log(err);
-    message.reply('AI error.');
+    // Alt kısımdaki butonlar
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId('take_loan_btn')
+            .setLabel('Take a Loan')
+            .setStyle(ButtonStyle.Primary), // Mavi/Mor buton
+        new ButtonBuilder()
+            .setCustomId('loan_rules_btn')
+            .setLabel('Loan Rules')
+            .setStyle(ButtonStyle.Secondary), // Gri buton
+        new ButtonBuilder()
+            .setCustomId('loan_guide_btn')
+            .setLabel('Guide')
+            .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId('loan_limit_btn')
+            .setLabel('My Limit')
+            .setStyle(ButtonStyle.Secondary)
+    );
+
+    // Menüyü kanala gönderiyoruz ve komut mesajını siliyoruz
+    await message.channel.send({ embeds: [loanEmbed], components: [row] });
+    return message.delete().catch(() => {});
+  }
+
+  // SENİN MEVCUT YAPAY ZEKA KOMUTUN (!ai)
+  if (message.content.startsWith('!ai ')) {
+    const soru = message.content.slice(4);
+
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a multilingual Discord AI bot. Respond in the same language as the user (Turkish, English, Finnish, etc.). Be natural, helpful and clear.'
+            },
+            {
+              role: 'user',
+              content: soru
+            }
+          ]
+        })
+      });
+
+      const data = await response.json();
+
+      if (!data.choices || !data.choices[0]) {
+        console.log(data);
+        return message.reply('AI error.');
+      }
+
+      await message.reply(data.choices[0].message.content);
+
+    } catch (err) {
+      console.log(err);
+      message.reply('AI error.');
+    }
   }
 });
 
-client.login(process.env.TOKEN);
+// --- 2. KISIM: BUTON ETKİLEŞİMLERİ (INTERACTION CREATE) ---
+client.on('interactionCreate', async (interaction) => {
+    // Eğer tıklanan şey bir buton değilse işlemi durdur
+    if (!interaction.isButton()) return;
+
+    const guild = interaction.guild;
+    const user = interaction.user;
+
+    // "Take a Loan" butonuna basıldığında
+    if (interaction.customId === 'take_loan_btn') {
+        try {
+            // Sadece başvuran kişinin ve yetkililerin göreceği gizli kanal oluşturma
+            const ticketChannel = await guild.channels.create({
+                name: `loan-${user.username}`,
+                type: ChannelType.GuildText, // Yazı kanalı
+                permissionOverwrites: [
+                    {
+                        id: guild.id,
+                        deny: [PermissionFlagsBits.ViewChannel], // Herkese kapat
+                    },
+                    {
+                        id: user.id,
+                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory], // Başvuran kişiye aç
+                    }
+                    /* Eğer yetkili bir rolün de kanalı görmesini istiyorsan burayı aktifleştir:
+                    ,{
+                        id: 'YETKILI_ROL_ID_BURAYA', 
+                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
+                    }
+                    */
+                ],
+            });
+
+            // Butona basan kişiye sadece kendisinin göreceği (ephemeral) bir onay mesajı yolla
+            await interaction.reply({ content: `Kredi başvurunuz için özel kanal oluşturuldu: ${ticketChannel}`, ephemeral: true });
+
+            // Yeni açılan kanalın içine hoş geldin mesajı at
+            await ticketChannel.send({
+                content: `👋 Merhaba ${user}, Kredi başvuru talebiniz başarıyla alındı.\nBuradan yetkililerle görüşebilir veya botun diğer komutlarını kullanabilirsiniz.`
+            });
+
+        } catch (error) {
+            console.error(error);
+            await interaction.reply({ content: 'Kanal oluşturulurken bir hata meydana geldi!', ephemeral: true });
+        }
+    }
+
+    // Diğer butonlara basıldığında (Şimdilik sadece bilgi verir)
+    if (interaction.customId === 'loan_rules_btn') {
+        await interaction.reply({ content: '📖 **Loan Rules:** Kredi kuralları henüz eklenmedi.', ephemeral: true });
+    }
+    if (interaction.customId === 'loan_guide_btn') {
+        await interaction.reply({ content: '📘 **Guide:** Kredi rehberi henüz eklenmedi.', ephemeral: true });
+    }
+    if (interaction.customId === 'loan_limit_btn') {
+        await interaction.reply({ content: '💳 **My Limit:** Mevcut kredi limitiniz sorgulanamıyor.', ephemeral: true });
+    }
+});
+
+// Botu başlatma (Mevcut token yapınla çalışır)
+client.login(process.env.DISCORD_TOKEN || 'EĞER_ENV_YOKSA_BURAYA_TOKEN_YAZABİLİRSİN');
