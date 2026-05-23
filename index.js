@@ -7,7 +7,7 @@ const client = new Client({
 client.once('ready', () => {
   console.log('Bot aktif!');
 });
-const channel = await client.channels.fetch('1507495583563386910');
+const channel = await client.channels.fetch('1507495576479076424');
 
 channel.send(`
 📃│rules
