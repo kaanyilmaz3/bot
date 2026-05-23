@@ -60,14 +60,11 @@ client.on('messageCreate', async (message) => {
     const soru = message.content.slice(4);
 
     try {
-      // Buradaki process.env.GROQ_API_KEY kısmını Render panelinden vermediysen doğrudan şifreni buraya yazabilirsin.
-      const gApiKey = process.env.GROQ_API_KEY || 'BURAYA_GROQ_API_ANAHTARINI_YAZABILIRSIN';
-      
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${gApiKey}`
+          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
         },
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
@@ -147,5 +144,5 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-// ⚠️ ADIM 1: Developer portaldan kopyaladığın upuzun bot şifreni aşağıdaki tek tırnakların içine yapıştır!
-client.login('BURAYA_DISCORD_DEVELOPER_PORTALDAN_ALMA_TOKENI_YAZ');
+// Şifreleri sildik, sistem Render'dan okuyacak.
+client.login(process.env.DISCORD_TOKEN);
