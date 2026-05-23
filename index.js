@@ -1,7 +1,16 @@
 const { Client, GatewayIntentBits } = require('discord.js');
+const OpenAI = require('openai');
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ]
+});
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 client.once('ready', async () => {
@@ -44,6 +53,32 @@ Arguing moderation actions publicly will not be tolerated. Use proper channels f
 • Common sense applies
 If something is clearly disruptive or harmful, it will be dealt with even if not listed above.
 `);
+});
+
+client.on('messageCreate', async message => {
+  if (message.author.bot) return;
+
+  if (!message.content.startsWith('!ai ')) return;
+
+  const soru = message.content.slice(4);
+
+  try {
+    const cevap = await openai.chat.completions.create({
+      model: 'gpt-4.1-mini',
+      messages: [
+        {
+          role: 'user',
+          content: soru
+        }
+      ]
+    });
+
+    message.reply(cevap.choices[0].message.content);
+
+  } catch (err) {
+    console.log(err);
+    message.reply('AI hatası oluştu.');
+  }
 });
 
 client.login(process.env.TOKEN);
