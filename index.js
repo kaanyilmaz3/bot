@@ -46,7 +46,7 @@ client.on('messageCreate', async (message) => {
 
     if (!data.choices) {
       console.log(data);
-      return message.reply('Groq API error.');
+      return message.reply(JSON.stringify(data));
     }
 
     message.reply(data.choices[0].message.content);
