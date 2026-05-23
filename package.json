@@ -4,7 +4,6 @@
   "main": "index.js",
   "type": "commonjs",
   "dependencies": {
-    "discord.js": "^14.15.3",
-    "openai": "^4.52.7"
+    "discord.js": "^14.15.3"
   }
 }
